@@ -1,0 +1,5 @@
+{
+  "tgToken": "tg-token",
+  "dbPath": "./commydb.sqlite",
+  "chatId": -1001594741718
+}
