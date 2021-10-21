@@ -52,7 +52,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	bot.Debug = true
+	//bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	for {
@@ -63,7 +63,6 @@ func main() {
 			dayPersons := newOrderedMap()
 			for _, p := range peoples {
 				dayPersons.set(p.name, details{p.cate, p.rank})
-				fmt.Println(details{p.cate, p.rank})
 			}
 			for k := range dayPersons.keys {
 				text := makeText(dayPersons, k)
@@ -75,7 +74,11 @@ func main() {
 				if err != nil {
 					fmt.Println(err)
 				}
-				time.Sleep(time.Second * 30 * 60)
+				if len(dayPersons.keys) > 10 {
+					time.Sleep(time.Second * 30 * 60)
+				} else {
+					time.Sleep(time.Second * 60 * 60)
+				}
 			}
 		}
 		time.Sleep(time.Second * 30)
@@ -163,15 +166,17 @@ func makeText(dayPersons orderedMap, i int) string {
 	name := dayPersons.keys[i]
 	rank := dayPersons.m[name].rank
 	catg := dayPersons.m[name].cate
-	bars := strings.Repeat("|", len(fmt.Sprintf("%d", rank)))
+	stars := "☆✫✮✭★✯"
+	bars := stars[:len(fmt.Sprintf("%d", rank))*3]
 	bdlc := monday.Format(time.Now(), "2 January", monday.LocaleRuRU)
+	log.Printf("%s %s", name, bars)
 
 	info := getInfo(name)
 	info = strings.Join(strings.Split(strings.TrimRight(info, "\n"), "\n"), "\n\n")
 	href := fmt.Sprintf("<a href='https://ru.wikipedia.org/wiki/%s'>%s</a>",
 		strings.ReplaceAll(name, " ", "_"), name)
 
-	text := fmt.Sprintf("<i>%s</i> родился товарищ <b>%s</b>\n\n%s\n\n%s  <i>%s</i>\n",
-		bdlc, href, info, bars, catg)
+	text := fmt.Sprintf("<i>%s</i> родился товарищ <b>%s</b> %s\n\n%s\n\n<i>%s</i>\n",
+		bdlc, href, bars, info, catg)
 	return text
 }
