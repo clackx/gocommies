@@ -1,0 +1,8 @@
+services:
+  gocommies:
+    build: .
+    image: clackx/gocommies
+    container_name: gocommies
+    environment:
+      - TGTOKEN=${TGTOKEN}
+      - CHATID=${CHATID}
