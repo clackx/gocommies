@@ -9,10 +9,11 @@ import (
 	"github.com/goodsign/monday"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -47,10 +48,14 @@ type orderedMap struct {
 
 func main() {
 	config := getConfig()
+	TgToken := getEnv("TGTOKEN", config.TgToken)
+	ChatId := getEnvInt64("CHATID", config.ChatId)
+	DBPath := getEnv("DBPATH", config.DBPath)
 
-	bot, err := tgbotapi.NewBotAPI(config.TgToken)
+	bot, err := tgbotapi.NewBotAPI(TgToken)
 	if err != nil {
-		log.Panic(err)
+		fmt.Println("Cannot auth. Wrong token?")
+		os.Exit(1)
 	}
 	//bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
@@ -59,14 +64,14 @@ func main() {
 		tnow := time.Now().Format("15:04")
 		if tnow == "09:00" {
 			bday := time.Now().Format("01.02")
-			peoples := getRed(bday, config.DBPath)
+			peoples := getRed(bday, DBPath)
 			dayPersons := newOrderedMap()
 			for _, p := range peoples {
 				dayPersons.set(p.name, details{p.cate, p.rank})
 			}
 			for k := range dayPersons.keys {
 				text := makeText(dayPersons, k)
-				msg := tgbotapi.NewMessage(config.ChatId, text)
+				msg := tgbotapi.NewMessage(ChatId, text)
 				msg.ParseMode = "html"
 				msg.DisableWebPagePreview = false
 				msg.DisableNotification = true
@@ -101,7 +106,7 @@ func (o *orderedMap) set(k string, v details) {
 }
 
 func getConfig() config {
-	data, err := ioutil.ReadFile("conf.json")
+	data, err := os.ReadFile("conf.json")
 	if err != nil {
 		panic(err)
 	}
@@ -179,4 +184,26 @@ func makeText(dayPersons orderedMap, i int) string {
 	text := fmt.Sprintf("<i>%s</i> родился товарищ <b>%s</b> %s\n\n%s\n\n<i>%s</i>\n",
 		bdlc, href, bars, info, catg)
 	return text
+}
+
+func getEnv(key, fallback string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		value = fallback
+	}
+	return value
+}
+
+func getEnvInt64(key string, fallback int64) int64 {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		return fallback
+	}
+
+	i64value, err := strconv.ParseInt(value, 10, 0)
+	if err != nil {
+		log.Printf("CHATID should be int type")
+		return fallback
+	}
+	return i64value
 }
